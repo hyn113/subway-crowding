@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f8fa"><meta name="description" content="오늘의 지하철 혼잡도를 한눈에 비교하는 모바일 시제품">
+<title>덜붐 — 오늘의 지하철 혼잡도</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;color:#1c292e;background:#f6f8f9}
+*{box-sizing:border-box}body{margin:0}.app{max-width:480px;min-height:100vh;margin:auto;background:#fff;padding:26px 20px 45px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:35px}header strong{font-size:24px;letter-spacing:-1.5px}header small{font-size:12px;color:#7d878d}
+h1{font-size:27px;line-height:1.32;letter-spacing:-1.2px;margin:0 0 8px}p{margin:0}.intro{font-size:14px;color:#758088;margin-bottom:26px}
+.fields{display:grid;grid-template-columns:1fr 24px 1fr;align-items:end;gap:10px;border-radius:17px;background:#f5f7f8;padding:16px}
+label{display:block;font-size:11px;color:#7c868e;margin-bottom:8px}input{font:inherit;width:100%;min-width:0;border:0;outline:0;background:transparent;font-size:19px;font-weight:700;color:#1b282c}
+.arrow{align-self:center;text-align:center;color:#809098;font-size:19px}.go{width:100%;margin:12px 0 22px;border:0;border-radius:13px;padding:15px;background:#1d2b31;color:white;font-size:15px;font-weight:700}
+.notice{border-radius:12px;background:#fff7e7;color:#745b2c;padding:12px 13px;font-size:12px;line-height:1.6;margin-bottom:26px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px}.head h2{font-size:17px;margin:0;letter-spacing:-.5px}.badge{border:1px solid #e4e8ea;border-radius:30px;color:#69767d;padding:5px 9px;font-size:11px}
+.route{font-size:12px;color:#839098;margin:9px 0 20px}.picked{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}.picked strong{font-size:28px;letter-spacing:-1px}.picked span{font-size:12px;color:#74818a}
+.chart{height:170px;display:flex;align-items:end;gap:5px;border-bottom:1px solid #e9edef}.bar-btn{height:100%;flex:1;display:flex;align-items:end;justify-content:center;border:0;padding:0;background:transparent;cursor:pointer}
+.bar{width:100%;max-width:34px;border-radius:6px 6px 0 0;transition:height .18s}.bar-btn[aria-pressed="true"] .bar{outline:2px solid #24353c;outline-offset:2px}
+.ticks{display:flex;gap:5px;margin-top:10px}.ticks span{flex:1;text-align:center;font-size:10px;color:#8a959a;white-space:nowrap}.ticks .active{color:#15242c;font-weight:800}
+.hint{text-align:center;color:#8a959a;font-size:11px;margin:17px 0 27px}hr{border:0;border-top:1px solid #edf0f1;margin:0 0 25px}
+.cars{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:19px}.car{height:44px;border:0;border-radius:5px;color:white;font-size:12px;font-weight:700;cursor:pointer}.car[aria-pressed="true"]{outline:2px solid #1d2b31;outline-offset:2px}
+.numbers{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin:7px 0 20px}.numbers span{text-align:center;font-size:10px;color:#829096}
+.detail{background:#f5f7f8;border-radius:13px;padding:15px;display:flex;justify-content:space-between;align-items:center}.detail strong{font-size:15px}.detail small{display:block;color:#79858a;font-size:12px;margin-top:5px}.detail b{font-size:19px}
+.legend{display:flex;justify-content:center;gap:18px;margin:21px 0 30px}.legend span{font-size:11px;color:#728088;display:flex;align-items:center;gap:5px}.dot{display:inline-block;width:9px;height:9px;border-radius:3px}
+footer{border-top:1px solid #edf0f1;padding-top:16px;color:#8b969c;font-size:11px;line-height:1.8}
+.error{color:#b53d38;font-size:12px;margin:-10px 0 14px}[hidden]{display:none!important}
+button:focus-visible,input:focus-visible{outline:2px solid #234e5d;outline-offset:3px}
+@media(min-width:540px){body{padding:35px 0}.app{border:1px solid #edf0f1;border-radius:24px;box-shadow:0 15px 50px #15242c0d}}
+</style>
+</head>
+<body><main class="app">
+<header><strong>덜붐<span style="color:#70ad9c">.</span></strong><small>오늘의 지하철 혼잡도</small></header>
+<h1>덜 붐비는 시간,<br>한눈에 확인하세요.</h1><p class="intro">출발역과 도착역을 입력하고 시간대를 비교해 보세요.</p>
+<form id="search"><div class="fields"><div><label for="from">출발역</label><input id="from" value="백운" maxlength="30" autocomplete="off"></div><span class="arrow">→</span><div><label for="to">도착역</label><input id="to" value="신설동" maxlength="30" autocomplete="off"></div></div><button type="submit" class="go">혼잡도 보기</button><p id="error" class="error" hidden></p></form>
+<p class="notice"><strong>시제품 · 가상 데이터</strong><br>표시되는 모든 혼잡도 수치는 UI 테스트를 위한 예시이며 실제 관측값이나 오늘의 예측이 아닙니다.</p>
+<section id="results" aria-label="혼잡도 조회 시제품">
+<div class="head"><h2>시간대별 혼잡도</h2><span class="badge">데모</span></div>
+<p class="route" id="route">백운 → 신설동 · 30분 간격</p>
+<div class="picked"><strong id="time">07:00</strong><span id="summary">55/100 · 보통</span></div>
+<div id="chart" class="chart" role="group" aria-label="출발 시간 선택"></div><div id="ticks" class="ticks" aria-hidden="true"></div>
+<p class="hint">막대를 선택하면 아래 칸별 혼잡도도 바뀝니다.</p><hr>
+<div class="head"><h2>칸별 혼잡도</h2><span class="badge" id="carTime">07:00 기준</span></div>
+<p class="route">호차를 눌러 비교할 수 있어요.</p>
+<div class="cars" id="cars" role="group" aria-label="호차 선택"></div><div class="numbers" id="numbers" aria-hidden="true"></div>
+<div class="detail"><div><strong id="carName">1호차</strong><small id="carStatus">가상 데이터</small></div><b id="carValue">40/100</b></div>
+<div class="legend"><span><i class="dot" style="background:#70ad9c"></i>여유</span><span><i class="dot" style="background:#d4a15e"></i>보통</span><span><i class="dot" style="background:#d17d76"></i>혼잡</span></div>
+</section>
+<footer>데이터 출처: 현재 공식 API 미연결 · 데모 데이터만 제공<br>추후 실데이터 연결 시 제공기관, 기준일, 통계·예측·실시간 여부를 표시합니다.<br>편성별 호차 수는 실제 열차와 다를 수 있습니다.</footer>
+</main>
+<script>
+"use strict";
+const times=["06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30"];
+const sample=[24,37,55,76,92,85,62,40], offset=[-15,-8,5,12,17,10,3,-6,-13,-18];
+const el=id=>document.getElementById(id); let hour=2,car=0;
+const value=n=>Math.max(5,Math.min(100,n));
+const status=n=>n>=75?"혼잡":n>=50?"보통":"여유";
+const color=n=>n>=75?"#d17d76":n>=50?"#d4a15e":"#70ad9c";
+function render(){
+ const n=sample[hour],c=value(n+offset[car]);
+ el("time").textContent=times[hour];el("summary").textContent=n+"/100 · "+status(n);el("carTime").textContent=times[hour]+" 기준";
+ el("chart").replaceChildren();el("ticks").replaceChildren();
+ sample.forEach((v,i)=>{
+  const b=document.createElement("button");b.type="button";b.className="bar-btn";b.setAttribute("aria-label",times[i]+" 가상 혼잡도 "+v+"/100");b.setAttribute("aria-pressed",hour===i);
+  const bar=document.createElement("span");bar.className="bar";bar.style.height=v+"%";bar.style.background=color(v);b.append(bar);b.addEventListener("click",()=>{hour=i;car=0;render()});el("chart").append(b);
+  const t=document.createElement("span");t.textContent=times[i];if(hour===i)t.className="active";el("ticks").append(t);
+ });
+ el("cars").replaceChildren();el("numbers").replaceChildren();
+ offset.forEach((off,i)=>{
+  const v=value(n+off),b=document.createElement("button");b.type="button";b.className="car";b.style.background=color(v);b.textContent=i+1;b.setAttribute("aria-label",(i+1)+"호차 가상 혼잡도 "+v+"/100");b.setAttribute("aria-pressed",i===car);b.addEventListener("click",()=>{car=i;render()});el("cars").append(b);
+  const t=document.createElement("span");t.textContent=i+1;el("numbers").append(t);
+ });
+ el("carName").textContent=(car+1)+"호차";el("carStatus").textContent=status(c)+" · 가상 데이터";el("carValue").textContent=c+"/100";
+}
+el("search").addEventListener("submit",e=>{
+ e.preventDefault();const a=el("from").value.trim(),b=el("to").value.trim();
+ if(!a||!b||a===b){el("error").hidden=false;el("error").textContent=!a||!b?"출발역과 도착역을 입력해 주세요.":"서로 다른 역을 입력해 주세요.";return}
+ el("error").hidden=true;el("route").textContent=a+" → "+b+" · 30분 간격";hour=2;car=0;render();
+});
+render();
+</script>
+</body>
+</html>
